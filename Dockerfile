@@ -1,21 +1,37 @@
-FROM ubuntu:15.10
+FROM alpine
 
-RUN apt-get update && apt-get install -y g++ git cmake libboost-all-dev
-RUN mkdir /data
+RUN apk update && apk add --clean \
+    g++ \
+    git \
+    cmake \
+    build-base \
+    boost-system \
+    boost-thread \
+    boost-filesystem \
+    boost-program_options \
+    boost-regex \
+    boost-iostreams
 
 WORKDIR /data
 
-RUN git clone https://github.com/m-schuetz/LAStools.git
-WORKDIR /data/LAStools/LASzip
-RUN mkdir build
-RUN cd build && cmake -DCMAKE_BUILD_TYPE=Release ..
-RUN cd build && make
+RUN git clone https://github.com/m-schuetz/LAStools.git \
+    && cd /data/LAStools/LASzip \
+    && mkdir build \
+    && cd build \
+    && cmake -DCMAKE_BUILD_TYPE=Release .. \
+    && make \
+    && make install
 
-RUN mkdir ./PotreeConverter
-WORKDIR /data/PotreeConverter
 ADD . /data/PotreeConverter
-RUN mkdir build
-RUN cd build && cmake -DCMAKE_BUILD_TYPE=Release -DLASZIP_INCLUDE_DIRS=/data/LAStools/LASzip/dll -DLASZIP_LIBRARY=/data/LAStools/LASzip/build/src/liblaszip.so .. 
-RUN cd build && make
-RUN cp -R /data/PotreeConverter/PotreeConverter/resources/ /data
 
+RUN mkdir PotreeConverter/build \
+    && cd PotreeConverter/build \
+    && cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DLASZIP_INCLUDE_DIRS=/data/LAStools/LASzip/dll \
+        -DLASZIP_LIBRARY=/data/LAStools/LASzip/build/src/liblaszip.so \
+        .. \
+    && make \
+    && make install
+
+RUN cp -R /data/PotreeConverter/PotreeConverter/resources/ /data
